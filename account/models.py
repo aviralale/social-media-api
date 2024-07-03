@@ -1,5 +1,11 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
+import random
+
+
+def get_random_default_pfp():
+    peep_count = 105
+    return f"user_avatar/peep-{random.randint(1, peep_count)}.jpg"
 
 
 class UserManager(BaseUserManager):
@@ -48,10 +54,31 @@ class User(AbstractBaseUser):
     middle_name = models.CharField(max_length=255, null=True, blank=True)
     last_name = models.CharField(max_length=255)
     username = models.CharField(max_length=50, unique=True)
+    profile_pic = models.ImageField(
+        upload_to="media/user_avatar",
+        null=True,
+        blank=True,
+        default=get_random_default_pfp,
+    )
+    cover_pic = models.ImageField(
+        upload_to="media/user_cover_pic",
+        null=True,
+        blank=True,
+        default=get_random_default_pfp,
+    )
+    GENDER_CHOICES = [
+        ("M", "Male"),
+        ("F", "Female"),
+        ("O", "Other"),
+    ]
+    bio = models.TextField(max_length=103, null=True)
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
+    gender = models.CharField(max_length=6, choices=GENDER_CHOICES, null=True)
+    date_of_birth = models.DateField(null=True, blank=True)
+    is_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -71,3 +98,9 @@ class User(AbstractBaseUser):
 
     def has_module_perms(self, app_label):
         return self.is_superuser
+
+    def follower_count(self):
+        return self.followers.count()
+
+    def following_count(self):
+        return self.following.count()

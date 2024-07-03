@@ -28,6 +28,7 @@ INSTALLED_APPS += [
     "djoser",
     "corsheaders",
     "account",
+    "social",
 ]
 
 MIDDLEWARE = [
@@ -137,8 +138,9 @@ DJOSER = {
     "TOKEN_MODEL": None,  #!TO DELETE USER
     "SERIALIZERS": {
         "user_create": "account.serializers.UserCreateSerializer",
-        "user": "account.serializers.UserCreateSerializer",
+        "user": "account.serializers.UserSerializer",
         "user_delete": "djoser.serializers.UserDeleteSerializer",
+        "current_user": "account.serializers.UserSerializer",
     },
 }
 
@@ -163,3 +165,8 @@ EMAIL_USE_TLS = True
 EMAIL_FRONTEND_SITE_NAME = "VibeSphere"
 EMAIL_FRONTEND_DOMAIN = "localhost:5173"
 EMAIL_FRONTEND_PROTOCOL = "http"
+
+
+# * MEDIA
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"

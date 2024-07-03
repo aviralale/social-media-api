@@ -13,11 +13,31 @@ class UserAdmin(BaseUserAdmin):
         (None, {"fields": ("email", "password")}),
         (
             "Personal info",
-            {"fields": ("first_name", "middle_name", "last_name", "username")},
+            {
+                "fields": (
+                    "first_name",
+                    "middle_name",
+                    "last_name",
+                    "username",
+                    "profile_pic",
+                    "cover_pic",
+                    "bio",
+                    "gender",
+                    "date_of_birth",
+                )
+            },
         ),
         (
             "Permissions",
-            {"fields": ("is_admin", "is_active", "is_staff", "is_superuser")},
+            {
+                "fields": (
+                    "is_admin",
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "is_verified",
+                )
+            },
         ),
         ("Important dates", {"fields": ("last_login",)}),
     )
