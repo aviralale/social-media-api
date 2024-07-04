@@ -104,24 +104,33 @@ class ReplySerializer(serializers.ModelSerializer):
 
 
 class PostLikeSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
     class Meta:
         model = PostLike
         fields = ["id", "post", "user", "created_at"]
 
 
 class CommentLikeSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
     class Meta:
         model = CommentLike
         fields = ["id", "comment", "user", "created_at"]
 
 
 class ReplyLikeSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
     class Meta:
         model = ReplyLike
         fields = ["id", "reply", "user", "created_at"]
 
 
 class FollowerSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    followed = UserSerializer(read_only=True)
+
     class Meta:
         model = Follower
         fields = ["id", "user", "followed", "created_at"]

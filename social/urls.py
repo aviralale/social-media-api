@@ -33,17 +33,17 @@ urlpatterns = [
         name="reply-like",
     ),
     path(
-        "users/<int:pk>/posts/",
+        "users/<str:username>/posts/",
         UserViewSet.as_view({"get": "posts"}),
         name="user-posts",
     ),
     path(
-        "users/<int:pk>/followers/",
+        "users/<str:username>/followers/",
         UserViewSet.as_view({"get": "followers"}),
         name="user-followers",
     ),
     path(
-        "users/<int:pk>/following/",
+        "users/<str:username>/following/",
         UserViewSet.as_view({"get": "following"}),
         name="user-following",
     ),
@@ -71,5 +71,15 @@ urlpatterns = [
         "replies/<int:pk>/likers/",
         ReplyViewSet.as_view({"get": "likers"}),
         name="reply-likers",
+    ),
+    path(
+        "followers/follow/",
+        FollowerViewSet.as_view({"post": "follow"}),
+        name="follow-user",
+    ),
+    path(
+        "followers/<str:username>/unfollow/",
+        FollowerViewSet.as_view({"delete": "unfollow"}),
+        name="unfollow-user",
     ),
 ]

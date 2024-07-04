@@ -36,6 +36,10 @@ class Media(models.Model):
             raise ValidationError("A post cannot have more than 10 media files.")
         super().save(*args, **kwargs)
 
+    @property
+    def author(self):
+        return self.post.author
+
 
 class Comment(models.Model):
     post = models.ForeignKey(Post, related_name="comments", on_delete=models.CASCADE)
