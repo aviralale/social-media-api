@@ -39,6 +39,7 @@ class UserSerializer(BaseUserSerializer):
             "is_superuser",
             "created_at",
             "updated_at",
+            "post_count",
         ]
         read_only_fields = [
             "id",

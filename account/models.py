@@ -104,3 +104,6 @@ class User(AbstractBaseUser):
 
     def following_count(self):
         return self.following.count()
+
+    def post_count(self):
+        return self.post_set.count()
