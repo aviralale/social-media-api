@@ -6,7 +6,7 @@ from .models import User
 
 class UserAdmin(BaseUserAdmin):
     # The fields to be used in displaying the User model.
-    list_display = ("email", "first_name", "last_name", "is_admin", "is_active")
+    list_display = ("username", "first_name", "last_name", "is_admin", "is_active")
     list_filter = ("is_admin", "is_active")
 
     fieldsets = (
