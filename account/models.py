@@ -55,13 +55,13 @@ class User(AbstractBaseUser):
     last_name = models.CharField(max_length=255, null=True, blank=True)
     username = models.CharField(max_length=50, unique=True)
     profile_pic = models.ImageField(
-        upload_to="media/user_avatar",
+        upload_to="user_avatar",
         null=True,
         blank=True,
         default=get_random_default_pfp,
     )
     cover_pic = models.ImageField(
-        upload_to="media/user_cover_pic",
+        upload_to="user_cover_pic",
         null=True,
         blank=True,
         default=get_random_default_pfp,

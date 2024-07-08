@@ -1,6 +1,7 @@
 from django.db import models
 from account.models import User
 from django.core.exceptions import ValidationError
+import mimetypes
 
 
 class Post(models.Model):
@@ -12,9 +13,7 @@ class Post(models.Model):
         return self.content[:20]
 
     def media_count(self):
-        if self.pk:
-            return self.media.count()
-        return 0
+        return self.media.count() if self.pk else 0
 
     def like_count(self):
         return self.likes.count()
@@ -29,11 +28,26 @@ class Post(models.Model):
 
 class Media(models.Model):
     post = models.ForeignKey(Post, related_name="media", on_delete=models.CASCADE)
-    file = models.FileField(upload_to="media/posts/")
+    file = models.FileField(upload_to="posts/")
+    type = models.CharField(max_length=10, editable=False)
 
     def save(self, *args, **kwargs):
+        # Check the media count constraint
         if self.post.pk and self.post.media_count() >= 10:
             raise ValidationError("A post cannot have more than 10 media files.")
+
+        # Determine the type based on the MIME type of the file
+        mime_type, _ = mimetypes.guess_type(self.file.name)
+        if mime_type:
+            if mime_type.startswith("image"):
+                self.type = "image"
+            elif mime_type.startswith("video"):
+                self.type = "video"
+            else:
+                raise ValidationError("Unsupported file type.")
+        else:
+            raise ValidationError("Could not determine the file type.")
+
         super().save(*args, **kwargs)
 
     @property

@@ -40,7 +40,7 @@ class UserSerializer(serializers.ModelSerializer):
 class MediaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Media
-        fields = ["id", "post", "file"]
+        fields = ["id", "post", "file", "type"]
 
 
 class PostSerializer(serializers.ModelSerializer):
