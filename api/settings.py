@@ -47,7 +47,7 @@ ROOT_URLCONF = "api.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+         "DIRS": [os.path.join(BASE_DIR, 'account', 'templates')],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -124,9 +124,8 @@ SIMPLE_JWT = {
 
 # Djoser configuration
 DJOSER = {
-    "LOGIN_FIELD": "email",
+    "LOGIN_FIELD": "username",
     "USER_CREATE_PASSWORD_RETYPE": True,
-    "ACTIVATION_URL": "/activate/{uid}/{token}",
     "PASSWORD_RESET_CONFIRM_URL": "/password-reset/confirm/{uid}/{token}",
     "USERNAME_RESET_CONFIRM_URL": "/username-reset/confirm/{uid}/{token}",
     "ACTIVATION_URL": "/activate/{uid}/{token}",
@@ -141,6 +140,14 @@ DJOSER = {
         "user": "account.serializers.UserSerializer",
         "user_delete": "djoser.serializers.UserDeleteSerializer",
         "current_user": "account.serializers.UserSerializer",
+    },
+    "EMAIL": {
+        "activation": "account.email.ActivationEmail",
+        "confirmation": "account.email.ConfirmationEmail",
+        "password_reset": "account.email.PasswordResetEmail",
+        "password_changed_confirmation": "account.email.PasswordChangedConfirmationEmail",
+        "username_changed_confirmation": "account.email.UsernameChangedConfirmationEmail",
+        "username_reset": "account.email.UsernameResetEmail",
     },
 }
 

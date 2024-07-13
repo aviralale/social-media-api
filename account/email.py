@@ -1,6 +1,5 @@
 from django.contrib.auth.tokens import default_token_generator
 from templated_mail.mail import BaseEmailMessage
-
 from djoser import utils
 from djoser.conf import settings
 
@@ -9,9 +8,9 @@ class BaseDjoserEmail(BaseEmailMessage):
     def get_context_data(self):
         context = super().get_context_data()
         overridable = {
-            "protocol": settings.EMAIL_FRONTEND_PROTOCOL,
-            "domain": settings.EMAIL_FRONTEND_DOMAIN,
-            "site_name": settings.EMAIL_FRONTEND_SITE_NAME,
+            "protocol": "http",
+            "domain": "localhost:5173",
+            "site_name": "VibeSphere",
         }
         for context_key, context_value in overridable.items():
             if context_value:

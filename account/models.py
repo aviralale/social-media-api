@@ -9,9 +9,7 @@ def get_random_default_pfp():
 
 
 class UserManager(BaseUserManager):
-    def create_user(
-        self, email, first_name, last_name, username, password=None, **extra_fields
-    ):
+    def create_user(self, email, first_name, username, password=None, **extra_fields):
         if not email:
             raise ValueError("Users must have an email address")
         if not username:
@@ -21,7 +19,6 @@ class UserManager(BaseUserManager):
         user = self.model(
             email=email,
             first_name=first_name,
-            last_name=last_name,
             username=username,
             **extra_fields,
         )
@@ -30,7 +27,7 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(
-        self, email, first_name, last_name, username, password=None, **extra_fields
+        self, email, first_name, username, password=None, **extra_fields
     ):
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_staff", True)
@@ -43,9 +40,7 @@ class UserManager(BaseUserManager):
         if extra_fields.get("is_admin") is not True:
             raise ValueError("Superuser must have is_admin=True.")
 
-        return self.create_user(
-            email, first_name, last_name, username, password, **extra_fields
-        )
+        return self.create_user(email, first_name, username, password, **extra_fields)
 
 
 class User(AbstractBaseUser):
@@ -64,7 +59,7 @@ class User(AbstractBaseUser):
         upload_to="user_cover_pic",
         null=True,
         blank=True,
-        default=get_random_default_pfp,
+        default="user_cover_pic/_MG_0525.JPG",
     )
     GENDER_CHOICES = [
         ("M", "Male"),
@@ -107,3 +102,6 @@ class User(AbstractBaseUser):
 
     def post_count(self):
         return self.post_set.count()
+
+    def is_following(self, user):
+        return self.following.filter(followed=user).exists()

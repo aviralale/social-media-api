@@ -38,6 +38,11 @@ urlpatterns = [
         name="user-posts",
     ),
     path(
+        "users/<str:username>/posts/<int:pk>/",
+        UserViewSet.as_view({"get": "post"}),
+        name="user-individual-post",
+    ),
+    path(
         "users/<str:username>/followers/",
         UserViewSet.as_view({"get": "followers"}),
         name="user-followers",

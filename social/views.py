@@ -177,6 +177,16 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(serializer.data)
 
     @action(detail=True, methods=["get"])
+    def post(self, request, username=None, pk=None):
+        user = self.get_object()
+        try:
+            post = Post.objects.get(author=user, pk=pk)
+            serializer = PostSerializer(post)
+            return Response(serializer.data)
+        except Post.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=["get"])
     def followers(self, request, username=None):
         user = self.get_object()
         followers = User.objects.filter(following__followed=user)
