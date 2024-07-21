@@ -7,6 +7,9 @@ from .views import (
     MediaViewSet,
     FollowerViewSet,
     UserViewSet,
+    HomePagePostsViewSet,
+    SuggestedUsersViewSet,
+    ExplorePostsViewSet,
 )
 
 router = DefaultRouter()
@@ -16,6 +19,9 @@ router.register(r"replies", ReplyViewSet)
 router.register(r"media", MediaViewSet)
 router.register(r"followers", FollowerViewSet)
 router.register(r"users", UserViewSet)
+router.register(r"home/posts", HomePagePostsViewSet, basename="home-posts")
+router.register(r"suggested-users", SuggestedUsersViewSet, basename="suggested-users")
+router.register(r"explore", ExplorePostsViewSet, basename="explore")
 
 urlpatterns = [
     path("", include(router.urls)),
@@ -51,6 +57,11 @@ urlpatterns = [
         "users/<str:username>/following/",
         UserViewSet.as_view({"get": "following"}),
         name="user-following",
+    ),
+    path(
+        "users/<str:username>/mutual-connections/",
+        UserViewSet.as_view({"get": "mutual_connections"}),
+        name="user-mutual-connections",
     ),
     path(
         "posts/<int:pk>/comments/",

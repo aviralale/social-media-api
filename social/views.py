@@ -2,7 +2,10 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.pagination import PageNumberPagination
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
+from rest_framework.parsers import MultiPartParser, FormParser
 
 from .models import (
     Post,
@@ -32,13 +35,36 @@ class IsAuthorOrReadOnly(permissions.BasePermission):
         return obj.author == request.user
 
 
+class CustomPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+    def get_paginated_response(self, data):
+        return Response(
+            {
+                "count": self.page.paginator.count,
+                "next": self.get_next_link(),
+                "previous": self.get_previous_link(),
+                "current_page": self.page.number,
+                "total_pages": self.page.paginator.num_pages,
+                "results": data,
+            }
+        )
+
+
 class PostViewSet(viewsets.ModelViewSet):
-    queryset = Post.objects.all()
+    queryset = Post.objects.all().order_by("-created_at")
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
+    pagination_class = CustomPagination
+    parser_classes = [MultiPartParser, FormParser]
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        post = serializer.save(author=self.request.user)
+        files = self.request.FILES.getlist("media")
+        for file in files:
+            Media.objects.create(post=post, file=file)
 
     @action(detail=True, methods=["post"])
     def like(self, request, pk=None):
@@ -66,9 +92,10 @@ class PostViewSet(viewsets.ModelViewSet):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
-    queryset = Comment.objects.all()
+    queryset = Comment.objects.all().order_by("-created_at")
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
+    pagination_class = CustomPagination
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -103,9 +130,10 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 
 class ReplyViewSet(viewsets.ModelViewSet):
-    queryset = Reply.objects.all()
+    queryset = Reply.objects.all().order_by("-created_at")
     serializer_class = ReplySerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
+    pagination_class = CustomPagination
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -135,6 +163,43 @@ class MediaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
+
+
+class DynamicPageSizePagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+    def get_paginated_response(self, data):
+        return Response(
+            {
+                "count": self.page.paginator.count,
+                "next": self.get_next_link(),
+                "previous": self.get_previous_link(),
+                "current_page": self.page.number,
+                "total_pages": self.page.paginator.num_pages,
+                "results": data,
+            }
+        )
+
+
+class HomePagePostsViewSet(viewsets.ModelViewSet):
+    serializer_class = PostSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = DynamicPageSizePagination
+
+    def get_queryset(self):
+        user = self.request.user
+        following_users = Follower.objects.filter(user=user).values_list(
+            "followed", flat=True
+        )
+        return Post.objects.filter(
+            Q(author__in=following_users) | Q(author=user)
+        ).order_by("-created_at")
 
 
 class FollowerViewSet(viewsets.ModelViewSet):
@@ -168,11 +233,16 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
     lookup_field = "username"
+    pagination_class = CustomPagination
 
     @action(detail=True, methods=["get"])
     def posts(self, request, username=None):
         user = self.get_object()
-        posts = Post.objects.filter(author=user)
+        posts = Post.objects.filter(author=user).order_by("-created_at")
+        page = self.paginate_queryset(posts)
+        if page is not None:
+            serializer = PostSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
         serializer = PostSerializer(posts, many=True)
         return Response(serializer.data)
 
@@ -189,13 +259,97 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=["get"])
     def followers(self, request, username=None):
         user = self.get_object()
-        followers = User.objects.filter(following__followed=user)
+        followers = User.objects.filter(following__followed=user).order_by(
+            "-following__created_at"
+        )
+        page = self.paginate_queryset(followers)
+        if page is not None:
+            serializer = UserSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
         serializer = UserSerializer(followers, many=True)
         return Response(serializer.data)
 
     @action(detail=True, methods=["get"])
     def following(self, request, username=None):
         user = self.get_object()
-        following = User.objects.filter(followers__user=user)
+        following = User.objects.filter(followers__user=user).order_by(
+            "-followers__created_at"
+        )
+        page = self.paginate_queryset(following)
+        if page is not None:
+            serializer = UserSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
         serializer = UserSerializer(following, many=True)
         return Response(serializer.data)
+
+    @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated])
+    def mutual_connections(self, request, username=None):
+        user = self.get_object()
+        current_user = request.user
+
+        # Get users that the current user follows
+        current_user_following = Follower.objects.filter(user=current_user).values_list(
+            "followed", flat=True
+        )
+
+        mutual_connections = User.objects.filter(id__in=current_user_following)
+
+        serializer = UserSerializer(mutual_connections, many=True)
+        return Response(serializer.data)
+
+
+class SuggestedUsersViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        following = Follower.objects.filter(user=user).values_list(
+            "followed", flat=True
+        )
+
+        if not following:
+            suggested_users = (
+                User.objects.exclude(id=user.id)
+                .annotate(mutuals=Count("followers"))
+                .order_by("-mutuals")[:10]
+            )
+        else:
+            suggested_users = (
+                User.objects.exclude(id__in=following)
+                .exclude(id=user.id)
+                .annotate(mutuals=Count("followers", filter=Q(followers__user=user)))
+                .order_by("-mutuals")[:10]
+            )
+
+        return suggested_users
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class ExplorePostsViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = PostSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = DynamicPageSizePagination
+
+    def get_queryset(self):
+        user = self.request.user
+        following_users = Follower.objects.filter(user=user).values_list(
+            "followed", flat=True
+        )
+
+        # Get posts from users that the current user is not following
+        explore_posts = (
+            Post.objects.exclude(author__in=following_users)
+            .exclude(author=user)
+            .order_by("-created_at")
+        )
+
+        return explore_posts
