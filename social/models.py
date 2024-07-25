@@ -25,6 +25,11 @@ class Post(models.Model):
         if self.media_count() > 10:
             raise ValidationError("A post cannot have more than 10 media files.")
 
+    def is_liked_by(self, user):
+        if user.is_authenticated:
+            return self.likes.filter(user=user).exists()
+        return False
+
 
 class Media(models.Model):
     post = models.ForeignKey(Post, related_name="media", on_delete=models.CASCADE)
@@ -70,6 +75,11 @@ class Comment(models.Model):
     def __str__(self):
         return self.content[:20]
 
+    def is_liked_by(self, user):
+        if user.is_authenticated:
+            return self.likes.filter(user=user).exists()
+        return False
+
 
 class Reply(models.Model):
     comment = models.ForeignKey(
@@ -84,6 +94,11 @@ class Reply(models.Model):
 
     def __str__(self):
         return self.content[:20]
+
+    def is_liked_by(self, user):
+        if user.is_authenticated:
+            return self.likes.filter(user=user).exists()
+        return False
 
 
 class PostLike(models.Model):

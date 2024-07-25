@@ -48,6 +48,7 @@ class PostSerializer(serializers.ModelSerializer):
     media = MediaSerializer(many=True, read_only=True)
     like_count = serializers.SerializerMethodField()
     comment_count = serializers.SerializerMethodField()
+    is_liked = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
@@ -59,6 +60,7 @@ class PostSerializer(serializers.ModelSerializer):
             "created_at",
             "like_count",
             "comment_count",
+            "is_liked",
         ]
 
     def get_like_count(self, obj):
@@ -67,11 +69,18 @@ class PostSerializer(serializers.ModelSerializer):
     def get_comment_count(self, obj):
         return obj.comment_count()
 
+    def get_is_liked(self, obj):
+        request = self.context.get("request")
+        if request:
+            return obj.is_liked_by(request.user)
+        return False
+
 
 class CommentSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     like_count = serializers.SerializerMethodField()
     reply_count = serializers.SerializerMethodField()
+    is_liked = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
@@ -83,6 +92,7 @@ class CommentSerializer(serializers.ModelSerializer):
             "created_at",
             "like_count",
             "reply_count",
+            "is_liked",
         ]
 
     def get_like_count(self, obj):
@@ -91,17 +101,38 @@ class CommentSerializer(serializers.ModelSerializer):
     def get_reply_count(self, obj):
         return obj.reply_count()
 
+    def get_is_liked(self, obj):
+        request = self.context.get("request")
+        if request:
+            return obj.is_liked_by(request.user)
+        return False
+
 
 class ReplySerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     like_count = serializers.SerializerMethodField()
+    is_liked = serializers.SerializerMethodField()
 
     class Meta:
         model = Reply
-        fields = ["id", "author", "comment", "content", "created_at", "like_count"]
+        fields = [
+            "id",
+            "author",
+            "comment",
+            "content",
+            "created_at",
+            "like_count",
+            "is_liked",
+        ]
 
     def get_like_count(self, obj):
         return obj.like_count()
+
+    def get_is_liked(self, obj):
+        request = self.context.get("request")
+        if request:
+            return obj.is_liked_by(request.user)
+        return False
 
 
 class PostLikeSerializer(serializers.ModelSerializer):

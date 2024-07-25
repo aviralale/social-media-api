@@ -10,6 +10,7 @@ from .views import (
     HomePagePostsViewSet,
     SuggestedUsersViewSet,
     ExplorePostsViewSet,
+    SearchViewSet,
 )
 
 router = DefaultRouter()
@@ -22,6 +23,7 @@ router.register(r"users", UserViewSet)
 router.register(r"home/posts", HomePagePostsViewSet, basename="home-posts")
 router.register(r"suggested-users", SuggestedUsersViewSet, basename="suggested-users")
 router.register(r"explore", ExplorePostsViewSet, basename="explore")
+router.register(r"search", SearchViewSet, basename="search")
 
 urlpatterns = [
     path("", include(router.urls)),

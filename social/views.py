@@ -56,9 +56,14 @@ class CustomPagination(PageNumberPagination):
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all().order_by("-created_at")
     serializer_class = PostSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     pagination_class = CustomPagination
     parser_classes = [MultiPartParser, FormParser]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["request"] = self.request
+        return context
 
     def perform_create(self, serializer):
         post = serializer.save(author=self.request.user)
@@ -94,7 +99,7 @@ class PostViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all().order_by("-created_at")
     serializer_class = CommentSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
+    permission_classes = [IsAuthenticated]
     pagination_class = CustomPagination
 
     def perform_create(self, serializer):
@@ -353,3 +358,29 @@ class ExplorePostsViewSet(viewsets.ReadOnlyModelViewSet):
         )
 
         return explore_posts
+
+
+class SearchViewSet(viewsets.ViewSet):
+    @action(detail=False, methods=["get"])
+    def search(self, request):
+        query = request.query_params.get("q", "")
+        if not query:
+            return Response({"results": []})
+
+        users = User.objects.filter(
+            Q(username__icontains=query) | Q(first_name__icontains=query)
+        )[:10]
+
+        posts = Post.objects.filter(
+            Q(content__icontains=query) | Q(author__username__icontains=query)
+        )[:20]
+
+        user_serializer = UserSerializer(users, many=True)
+        post_serializer = PostSerializer(posts, many=True)
+
+        results = {
+            "profiles": user_serializer.data,
+            "posts": post_serializer.data,
+        }
+
+        return Response(results)
