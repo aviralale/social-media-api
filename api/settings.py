@@ -15,6 +15,7 @@ ALLOWED_HOSTS = []
 
 # Application definition
 INSTALLED_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -29,7 +30,21 @@ INSTALLED_APPS += [
     "corsheaders",
     "account",
     "social",
+    "channels",
+    "chat",
+    "notifications",
 ]
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
+
+ASGI_APPLICATION = "api.asgi.application"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -47,7 +62,7 @@ ROOT_URLCONF = "api.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-         "DIRS": [os.path.join(BASE_DIR, 'account', 'templates')],
+        "DIRS": [os.path.join(BASE_DIR, "account", "templates")],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -177,3 +192,6 @@ EMAIL_FRONTEND_PROTOCOL = "http"
 # * MEDIA
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+
+SECRET_KEY = env("DJANGO_SECRET_KEY")
