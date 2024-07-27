@@ -6,6 +6,7 @@ from rest_framework.pagination import PageNumberPagination
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from rest_framework.parsers import MultiPartParser, FormParser
+from notifications.utils import send_notification
 
 from .models import (
     Post,
@@ -77,6 +78,7 @@ class PostViewSet(viewsets.ModelViewSet):
         user = request.user
         like, created = PostLike.objects.get_or_create(post=post, user=user)
         if created:
+            send_notification(post.author, user, "like", post)
             return Response({"message": "Post liked"}, status=status.HTTP_201_CREATED)
         like.delete()
         return Response({"message": "Post unliked"}, status=status.HTTP_204_NO_CONTENT)
@@ -103,7 +105,10 @@ class CommentViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPagination
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        comment = serializer.save(author=self.request.user)
+        send_notification(
+            comment.post.author, self.request.user, "comment", comment.post
+        )
 
     @action(detail=True, methods=["post"])
     def like(self, request, pk=None):
@@ -220,6 +225,7 @@ class FollowerViewSet(viewsets.ModelViewSet):
             user=request.user, followed=followed
         )
         if created:
+            send_notification(followed, request.user, "follow")
             return Response(
                 {"message": "Now following"}, status=status.HTTP_201_CREATED
             )

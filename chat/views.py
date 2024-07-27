@@ -14,7 +14,6 @@ class StartChatView(APIView):
 
     def get(self, request, username):
         other_user = get_object_or_404(User, username=username)
-        # Check if users follow each other
         is_following = Follower.objects.filter(
             user=request.user, followed=other_user
         ).exists()
@@ -70,7 +69,11 @@ class ChatRoomView(APIView):
                 "chatroom_id": chatroom.id,
                 "messages": serialized_messages,
                 "other_user_typing": is_typing,
-                "other_user": other_user.username,
+                "other_user": {
+                    "id": other_user.id,
+                    "username": other_user.username,
+                    "profile_pic": other_user.profile_pic.url,
+                },
             }
         )
 
@@ -127,6 +130,7 @@ class GetUserChatsView(APIView):
                 "other_user": {
                     "id": other_user.id,
                     "username": other_user.username,
+                    "profile_pic": other_user.profile_pic.url,
                 },
                 "last_message": {
                     "content": last_message.content if last_message else None,
